@@ -1,16 +1,23 @@
-export default function Post(){
+import {formatISO9075} from "date-fns"
+import {Link} from "react-router-dom";
+
+export default function Post({_id,title,summary,cover,content,createdAt,author}){
     return(
         <div className="post">
         <div className="image">
-        <img src="https://techcrunch.com/wp-content/uploads/2022/12/lawnmower-Large.jpeg?resize=1200,735" alt="" />
+          <Link to={`/post/${_id}`}>
+            <img src={`http://localhost:4000/${cover}`} alt="" /> 
+          </Link>
         </div>          
         <div className="texts">
-        <h2>Full-house battery backup coming later this year</h2>
+        <Link to={`/post/${_id}`}>
+          <h2>{title}</h2>
+        </Link>
         <p className="info">
-            <span className="author">Moses Chisango</span>
-            <time>2024-05-29 20:25</time>
+            <a className="author">{author.username}</a>
+            <time>{formatISO9075(new Date(createdAt))}</time>
           </p>
-        <p className="summary">EcoFlow releases autonomous lawnmower, AC and fridge | TechCrunch</p>
+        <p className="summary">{summary}</p>
         </div>          
       </div>
     )
