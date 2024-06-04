@@ -7,7 +7,7 @@ export default function Header(){
   useEffect(() => {
     fetch("http://localhost:4000/profile", {
       credentials: "include",
-      method: "POST",
+       method: "POST",
       headers: {"Content-Type":"application/json"},
       credentials: "include"
     }).then(response => {
