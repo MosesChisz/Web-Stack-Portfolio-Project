@@ -38,24 +38,31 @@ app.post("/register", async (req,res) => {
     }    
 })
 
-app.post("/login", async (req,res) => {
-    const {username,password} = req.body;
-    const userDoc = await User.findOne({username})
+app.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+    const userDoc = await User.findOne({ username });
+
+    if (!userDoc) {
+        
+        return res.status(400).json("wrong credentials");
+    }
+
     const passOk = bcrypt.compareSync(password, userDoc.password);
-        if (passOk){
-            //logged in
-            jwt.sign({username,id:userDoc._id}, secret, {}, (err,token) => {
-                if (err) throw err;
-                res.cookie("token", token).json({
-                    id:userDoc._id,
-                    username
-                });
-            })
-            //
-        }else{
-            res.status(400).json("wrong credentials");
-        };
+
+    if (passOk) {
+        jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+            if (err) throw err;
+            res.cookie("token", token).json({
+                id: userDoc._id,
+                username
+            });
+        });
+    } else {
+        res.status(400).json("wrong credentials");
+    }
 });
+
+
 
 app.get("/profile", (req,res) => {
     const {token} = req.cookies;
@@ -90,37 +97,6 @@ app.post("/post", uploadMiddleware.single("file"), async (req,res) => {
         res.json(postDoc)       
     })
 });
-
-// app.put('/post',uploadMiddleware.single('file'), async (req,res) => {
-//     let newPath = null;
-//     if (req.file) {
-//       const {originalname,path} = req.file;
-//       const parts = originalname.split('.');
-//       const ext = parts[parts.length - 1];
-//       newPath = path+'.'+ext;
-//       fs.renameSync(path, newPath);
-//     }
-  
-//     const {token} = req.cookies;
-//     jwt.verify(token, secret, {}, async (err,info) => {
-//       if (err) throw err;
-//       const {id,title,summary,content} = req.body;
-//       const postDoc = await Post.findById(id);
-//       const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
-//       if (!isAuthor) {
-//          return res.status(400).json('you are not the author');
-//        }
-//        await postDoc.update({
-//          title,
-//          summary,
-//          content,
-//          cover: newPath ? newPath : postDoc.cover,
-//        });
-  
-//        res.json(postDoc);
-//     });
-  
-//   });
 
 app.put('/post', uploadMiddleware.single('file'), async (req, res) => {
     let newPath = null;
@@ -168,6 +144,41 @@ app.get("/post/:id", async (req,res) => {
     const postDoc = await Post.findById(id).populate("author", ["username"]);
     res.json(postDoc)
 })
+
+app.delete('/post/:id', uploadMiddleware.single('file'), async (req, res) => {
+    const { id } = req.params;
+  
+    // Verify the JWT token
+    const { token } = req.cookies;
+    jwt.verify(token, secret, {}, async (err, info) => {
+      if (err) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+  
+      // Find the post by ID
+      const postDoc = await Post.findById(id);
+      if (!postDoc) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+  
+      // Check if the user is authorized to delete the post
+      const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+      if (!isAuthor) {
+        return res.status(403).json({ message: 'Not authorized to delete this post' });
+      }
+  
+      // Delete the post
+      await postDoc.remove();
+  
+      // Optionally, remove the uploaded file if it exists
+      if (req.file && postDoc.cover) {
+        fs.unlinkSync(postDoc.cover);
+      }
+  
+      res.json({ message: 'Post deleted successfully' });
+    });
+  });
+  
 
 app.listen(4000);
 
