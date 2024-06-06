@@ -144,42 +144,40 @@ app.get("/post/:id", async (req,res) => {
     const postDoc = await Post.findById(id).populate("author", ["username"]);
     res.json(postDoc)
 })
-
+  
 app.delete('/post/:id', uploadMiddleware.single('file'), async (req, res) => {
     const { id } = req.params;
-  
+
     // Verify the JWT token
     const { token } = req.cookies;
     jwt.verify(token, secret, {}, async (err, info) => {
-      if (err) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-  
-      // Find the post by ID
-      const postDoc = await Post.findById(id);
-      if (!postDoc) {
-        return res.status(404).json({ message: 'Post not found' });
-      }
-  
-      // Check if the user is authorized to delete the post
-      const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
-      if (!isAuthor) {
-        return res.status(403).json({ message: 'Not authorized to delete this post' });
-      }
-  
-      // Delete the post
-      await postDoc.remove();
-  
-      // Optionally, remove the uploaded file if it exists
-      if (req.file && postDoc.cover) {
-        fs.unlinkSync(postDoc.cover);
-      }
-  
-      res.json({ message: 'Post deleted successfully' });
+        if (err) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Find the post by ID
+        const postDoc = await Post.findById(id);
+        if (!postDoc) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        // Check if the user is authorized to delete the post
+        const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+        if (!isAuthor) {
+            return res.status(403).json({ message: 'Not authorized to delete this post' });
+        }
+
+        // Delete the post
+        await Post.deleteOne({ _id: id });
+
+        // Optionally, remove the uploaded file if it exists
+        if (req.file && postDoc.cover) {
+            fs.unlinkSync(postDoc.cover);
+        }
+
+        res.json({ message: 'Post deleted successfully' });
     });
-  });
-  
+});
+
 
 app.listen(4000);
-
-//mongodb+srv://moseschisango2:ssPuIterESGQCeNn@cluster0.egc4uux.mongodb.net/digitic?retryWrites=true&w=majority
