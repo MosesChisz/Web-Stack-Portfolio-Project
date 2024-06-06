@@ -60,7 +60,7 @@ const DeletePost = ({ onDelete }) => {
       <h2>Delete Post</h2>
       <p>Are you sure you want to delete this post?</p>
       <button onClick={handleDelete}>Yes, Delete</button>
-      <button onClick={() => window.location.href = `/posts/${id}`}>Cancel</button>
+      <button onClick={() => window.location.href = `/post/${id}-`}>Cancel</button>
     </div>
   );
 };
